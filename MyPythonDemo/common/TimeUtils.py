@@ -1,4 +1,5 @@
 # coding=utf-8
+# 时间工具类.
 
 import time
 
