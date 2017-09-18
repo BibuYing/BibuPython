@@ -19,7 +19,7 @@ class LocalDate():
             conn = pymysql.connect(user=self.mysql_user, password=self.mysql_password, database=self.mysql_database,
                                    charset="utf8")
             cursor = conn.cursor()
-            cursor.execute("SELECT id,answer,date FROM tb_answer ORDER BY id DESC")
+            cursor.execute("SELECT id,answer,date,question FROM tb_answer ORDER BY id DESC")
             values = cursor.fetchall()
 
             # 如果没有数据
@@ -33,7 +33,7 @@ class LocalDate():
                 return None
 
             logger.debug("今天已经收录答案")
-            return data[1]
+            return data[1], data[2], data[3]
         except Exception as e:
             logger.error(e)
             return None
@@ -120,8 +120,8 @@ class GetAnswer():
         date = t.strftime(str(datetime.now().year) + "-%m-%d", t.strptime(date, "%m月%d日"))
 
         if (localData.isToday(date)):
-            logger.debug("题目数据是今天的：" + date)
-            return question, answer, date, "http://app.3987.com/gonglue/16917.html"
+            logger.debug("活得最新数据:" + question + "--" + answer + "--" + str(date))
+            return question, answer, date, url
         else:
             logger.debug("题目数据不是今天的：" + date)
             return None
@@ -162,29 +162,62 @@ if __name__ == '__main__':
     getAnswer = GetAnswer();
     logger.debug("=====脚 本 开 始 运 行=====")
 
-    num = 0
+    local_answer = localData.getAnswer()
 
-    while not localData.getAnswer():
-        num += 1
+    if not local_answer or not localData.isToday(local_answer[1]):
+        logger.debug("当天数据不存在，开始获取数据")
 
-        logger.debug("第" + str(num) + "次获取数据")
+        num = 0
+        while True:
+            num += 1
+
+            logger.debug("第" + str(num) + "次获取数据")
+
+            answers = getAnswer.get_3987_answer("http://app.3987.com/gonglue/16917.html")
+
+            if answers:
+                logger.debug("获取数据正常，开始插入数据库")
+                statu = localData.insertAnswer(answers)
+                if statu:
+                    logger.debug("插入数据成功")
+                    break
+                else:
+                    logger.error("插入数据失败")
+
+            else:
+                logger.debug("返回数据不符合要求")
+
+            t.sleep(60 * 30)
+
+    else:
+        logger.debug("当天数据已存在，开始检查更新")
 
         answers = getAnswer.get_3987_answer("http://app.3987.com/gonglue/16917.html")
 
-        if answers:
-            logger.debug("获取数据正常，开始插入数据库")
-            statu = localData.insertAnswer(answers)
-            if statu:
-                logger.debug("插入数据成功")
-                break
+        isUpdata = False
+
+        if not local_answer[2] == answers[0]:
+            logger.debug("题目不一致")
+            isUpdata = True
+
+        if not local_answer[0] == answers[1]:
+            logger.debug("答案不一致")
+            isUpdata = True
+
+        if isUpdata:
+            logger.debug("需要更新题库")
+            if answers:
+                logger.debug("开始插入数据库")
+                statu = localData.insertAnswer(answers)
+                if statu:
+                    logger.debug("插入数据成功")
+                else:
+                    logger.error("插入数据失败")
             else:
-                logger.error("插入数据失败")
+                logger.debug("返回数据不符合要求")
 
         else:
-            logger.debug("返回数据不符合要求")
-
-        t.sleep(60 * 30)
-        pass
+            logger.debug("题库不需要更新")
 
     logger.debug("运行结束，关闭脚本")
     logger.debug("=========================\n")

@@ -43,6 +43,28 @@ class LocalDate():
             conn.commit()
             conn.close()
 
+    def getAnswerDetail(self):
+        try:
+            conn = pymysql.connect(user=self.mysql_user, password=self.mysql_password, database=self.mysql_database,
+                                   charset="utf8")
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM tb_answer ORDER BY id DESC")
+            values = cursor.fetchall()
+
+            # 如果没有数据
+            if (len(values) <= 0):
+                return None
+
+            data = values[0]
+            return data[1], data[2], data[3], data[4], str(data[5])
+        except Exception as e:
+            logger.debug(e)
+            return None
+        finally:
+            cursor.close()
+            conn.commit()
+            conn.close()
+
     def isToday(self, dateStr):
         """
         答案是否为当天的
@@ -101,6 +123,16 @@ class WeChat():
         text = msg['Text']
         logger.info("收到 " + remarkName + " 的信息：" + text)
 
+        if text == "data":
+            detail = localData.getAnswerDetail()
+            data = \
+                "题目:" + detail[0] + "\n" + \
+                "答案:" + detail[1] + "\n" + \
+                "日期:" + detail[2] + "\n" + \
+                "添加途径:" + detail[3] + "\n" + \
+                "添加时间:" + detail[4]
+            return str(data)
+
         # return "自动回复: " + msg['Text']
         answer = localData.getAnswer()
         if answer:
@@ -111,6 +143,12 @@ class WeChat():
 
         logger.debug("返回:" + answer)
         return answer
+
+    @itchat.msg_register(['Picture', 'Recording', 'Attachment', 'Video'])
+    def pic_reply(msg):
+        remarkName = msg['User']['RemarkName']
+        logger.info("收到 " + remarkName + " 的" + msg['Type'])
+        return "暂不支持该类型信息"
 
     def send(self, user, text):
         friends = itchat.search_friends(name=user)

@@ -143,5 +143,5 @@ class Belle:
 
 
 if __name__ == '__main__':
-    app = Belle(MODE_ALL)
+    app = Belle(MODE_ADD)
     app.begin()
