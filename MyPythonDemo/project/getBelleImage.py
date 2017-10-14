@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 
+
 # 获取网站图片
 main_path = "http://mm36d.com/home/0/"
 detail_path = "http://mm36d.com/belle/0/0/%s/2"
