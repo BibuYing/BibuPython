@@ -94,8 +94,10 @@ class Belle:
         s = requests.Session()
         response = s.get(url, allow_redirects=True, cookies=cookies)
         if response.status_code == 200:
+
             return response.text
         else:
+            print(response.status_code)
             return None
 
     # 创建文件夹
