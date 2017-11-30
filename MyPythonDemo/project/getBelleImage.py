@@ -10,6 +10,8 @@ main_path = "http://mm36d.com/home/0/"
 detail_path = "http://mm36d.com/belle/0/0/%s/2"
 result_root_path = 'E:/belle/'
 
+
+
 exitsPass = True  # 当爬取到链接存在时候直接关闭脚本，用于日常增量更新
 
 
